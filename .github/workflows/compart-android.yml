@@ -11,7 +11,7 @@ on:
         default: true
       upload-tag:
         type: string
-        default: "compart-1.4.6"
+        default: "compart-1.4.6-b"
 
 permissions:
   contents: write
@@ -156,9 +156,14 @@ jobs:
                      'pub const RENDEZVOUS_SERVERS: &[&str] = &["%s"];' % srv, s)
           n = re.sub(r'pub const RS_PUB_KEY: &str = "[^"]*";',
                      'pub const RS_PUB_KEY: &str = "%s";' % key, n)
+          # sem o aviso "nova versao": levava os clientes ao RustDesk oficial (sem o nosso servidor)
+          n = re.sub(r'pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default\(\);',
+                     'pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = '
+                     'RwLock::new(HashMap::from([("enable-check-update".to_owned(), "N".to_owned())]));', n)
           assert n.count(srv) >= 1 and n.count(key) >= 1 and n != s, 'troca falhou'
+          assert '("enable-check-update".to_owned(), "N".to_owned())' in n, 'troca da verificacao de atualizacoes falhou'
           open(f, 'w', encoding='utf-8').write(n)
-          print('servidor e chave CompArt aplicados')
+          print('servidor e chave CompArt aplicados; verificacao de atualizacoes desligada')
           EOF
 
       - name: Install flutter
